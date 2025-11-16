@@ -5,8 +5,7 @@
    #include <stdio.h>
    #include <stdlib.h>
    #include <string.h>
-   #include <unistd.h> 
-   #include "lexer.tab.h"
+   #include "parser.tab.h"
 
 void iniciarUbicaciones() {
     yylloc.first_line = yylloc.last_line = 1;
@@ -34,18 +33,16 @@ HEXADECIMAL     0[xX][0-9a-fA-F]+
 REAL            ("-")?(([0-9]+"."[0-9]+([Ee]("+"|"-")?[0-9]+)?)|([0-9]+[Ee]("+"|"-")?[0-9]+))
 CARACTER        \'(.|\\.)\'
 LITERAL_CADENA  \"(.|\\.)*\"
-TIPO_DATO       int|double|float|char\*|char|unsigned|enum|void
+TIPO_DATO       int|double|float|char|void
 IDENTIFICADOR   [a-zA-Z_][a-zA-Z0-9_]*
 
 
 %%
-[ \t] { 
+[ \t\r] { 
     actualizarLocationsColumnas();
-    BEGIN(INITIAL);
 }
 "\n" {
     actualizarLocationsNuevaFila();
-    BEGIN(INITIAL);
 }
 
 {DECIMAL} { 
@@ -132,11 +129,24 @@ const {
     yylval.cadena = strdup(yytext); 
     return CONST;
 }
+unsigned {
+    printf("Palabra reservada (otro): %s\n", yytext); 
+    actualizarLocationsColumnas();
+    yylval.cadena = strdup(yytext); 
+    return UNSIGNED;
+}
 extern { 
     printf("Palabra reservada (otro): %s\n", yytext); 
     actualizarLocationsColumnas();
     yylval.cadena = strdup(yytext); 
     return EXTERN;
+}
+
+enum { 
+    printf("Palabra reservada (enumerador): %s\n", yytext); 
+    actualizarLocationsColumnas();
+    yylval.cadena = strdup(yytext); 
+    return ENUM;
 }
 
 {IDENTIFICADOR} { 
@@ -302,7 +312,6 @@ extern {
     actualizarLocationsColumnas();
     fprintf(stderr, "Error léxico <linea:%d columna:%d> Caracter no válido: '%s'\n", yylloc.first_line, yylloc.first_column, yytext);
     errorCount++;
-    BEGIN(INITIAL);
 }
 
 %%
