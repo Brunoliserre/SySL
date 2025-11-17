@@ -3,8 +3,7 @@
 
 #include <stddef.h>
 
-#include <stdlib.h>
-#include <string.h>
+// ========== TIPOS ==========
 
 typedef void* arrItem;
 
@@ -14,43 +13,13 @@ typedef struct {
     int capacidad;
 } Array;
 
-// Funciones públicas
-Array* createArray(int capacidad_inicial) {
-    Array* a = (Array*)malloc(sizeof(Array));
-    a->elem = (arrItem*)malloc(sizeof(arrItem) * capacidad_inicial);
-    a->len = 0;
-    a->capacidad = capacidad_inicial;
-    return a;
-}
+// ========== DECLARACIONES DE FUNCIONES ==========
 
-void destroyArray(Array* a) {
-    free(a->elem);
-    free(a);
-}
-
-void redimensionar(Array* a, int nueva_capacidad) {
-    arrItem* nuevo_elem = (arrItem*)realloc(a->elem, sizeof(arrItem) * nueva_capacidad);
-    a->elem = nuevo_elem;
-    a->capacidad = nueva_capacidad;
-}
-
-// Función de inserción que maneja el redimensionamiento
-void insertElemArray(Array* a, arrItem valor) {
-    if(a->len >= a->capacidad) {
-        int nueva_capacidad = a->capacidad *2;
-        redimensionar(a, nueva_capacidad);
-    }
-
-    a->elem[a->len] = valor;
-    a->len++;
-}
-
-arrItem findElemArray(Array* a, int indice) {
-    return a->elem[indice];
-}
-
-int arraySize(Array* a) { 
-    return a->len; 
-}
+Array* createArray(int capacidad_inicial);
+void destroyArray(Array* a);
+void redimensionar(Array* a, int nueva_capacidad);
+void insertElemArray(Array* a, arrItem valor);
+arrItem findElemArray(Array* a, int indice);
+int arraySize(Array* a);
 
 #endif

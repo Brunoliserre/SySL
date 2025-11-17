@@ -12,7 +12,7 @@
 typedef enum
 {
     VARIABLE,
-    ENUM,
+    TIPO_ENUM,
     FUNCION
 } SimboloTipo;
 

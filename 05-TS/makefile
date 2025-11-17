@@ -1,6 +1,5 @@
 # =====================================
 # Makefile para analizador C simplificado
-# Archivos: parser.y (Bison) y lexer.l (Flex)
 # =====================================
 
 # --- Herramientas ---
@@ -11,6 +10,9 @@ CC   = gcc
 # --- Archivos fuente ---
 PARSER = parser.y
 LEXER  = lexer.l
+TABLA  = tablaSimbolos.c
+ARRAY  = arrayModule.c
+STACK  = stackModule.c
 TARGET = analizador
 
 # --- Archivos generados ---
@@ -26,8 +28,8 @@ LDFLAGS = -lm
 all: $(TARGET)
 
 # Compilación del ejecutable final
-$(TARGET): $(YACC_C) $(LEX_C)
-	$(CC) $(CFLAGS) $(YACC_C) $(LEX_C) -o $(TARGET) $(LDFLAGS)
+$(TARGET): $(YACC_C) $(LEX_C) $(TABLA) $(ARRAY) $(STACK)
+	$(CC) $(CFLAGS) $(YACC_C) $(LEX_C) $(TABLA) $(ARRAY) $(STACK) -o $(TARGET) $(LDFLAGS)
 
 # Generación de archivos de Bison (.tab.c y .tab.h)
 $(YACC_C) $(YACC_H): $(PARSER)
@@ -39,7 +41,7 @@ $(LEX_C): $(LEXER) $(YACC_H)
 
 # Limpieza de archivos generados
 clean:
-	rm -f $(YACC_C) $(YACC_H) $(LEX_C) lexer.output $(TARGET)
+	rm -f $(YACC_C) $(YACC_H) $(LEX_C) parser.output $(TARGET)
 
 # Limpieza total
 distclean: clean

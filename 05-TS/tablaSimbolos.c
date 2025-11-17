@@ -72,16 +72,22 @@ void abrirScope(TablaScopes *tabla)
 // Usar una pila permite modelar scopes anidados naturalmente: cada nuevo bloque { } pushea un
 // scope, y al cerrarlo hago pop. El scope actual siempre está en el tope de la pila.
 
+
+// CERRAR AMBITO ACTUAL
 void cerrarScope(TablaScopes *tabla)
 {
     if (!isEmpty(tabla->ambitos))
     {
-        Scope *actual = (Scope *)pop(tabla->ambitos);
+        Scope *actual = (Scope *)pop(tabla->ambitos);            // Sacar del tope
         printf("<<< Cerrando scope (nivel %d)\n", stackSize(tabla->ambitos));
-        destruirScope(actual);
+        destruirScope(actual);          // Liberar todo
     }
 }
+// Al cerrar un scope, todas las variables declaradas en ese bloque salen del ámbito y deben liberarse. 
+// Por eso hago pop de la pila y destruyo el scope completamente
 
+
+// CREAR SIMBOLO
 Simbolo *crearSimbolo(char *key, SimboloTipo clase, char *tipoDato,
                       int lineaDeclaracion, int nivelScope,
                       int constante, int externo, int unsg)
@@ -99,10 +105,14 @@ Simbolo *crearSimbolo(char *key, SimboloTipo clase, char *tipoDato,
     s->cantMiembros = 0;
     return s;
 }
+// Creo el símbolo con toda su metadata: nombre, tipo, modificadores (const, unsigned, extern) y ubicación. 
+// El array miembros se llena después si es función (parámetros) o enum (valores)
 
+
+// AGREGAR SIMBOLO
 int agregarSimbolo(TablaScopes *tabla, Simbolo *nuevo)
 {
-    Scope *actual = scopeActual(tabla);
+    Scope *actual = scopeActual(tabla);         // Scope del tope de la pila
 
     // Verificar duplicados en el mismo scope
     for (int i = 0; i < arraySize(actual->simbolos); i++)
@@ -112,18 +122,22 @@ int agregarSimbolo(TablaScopes *tabla, Simbolo *nuevo)
         {
             fprintf(stderr, "Error semántico: redeclaración de '%s' en el mismo scope (línea %d).\n",
                     nuevo->key, nuevo->lineaDeclaracion);
-            return 0;
+            return 0;   // NO se agregó (error)
         }
     }
 
-    insertElemArray(actual->simbolos, nuevo);
+    insertElemArray(actual->simbolos, nuevo); // Agregar al array
     actual->cantidad++;
-    return 1;
+    return 1; // Exito
 }
+// Solo verifico duplicados en el scope actual porque C permite shadowing: una variable local puede tener el mismo nombre que 
+// una global. Lo que no permite es redeclarar en el mismo ámbito.
 
+
+// BUSCAR EN TODOS LOS SCOPES
 Simbolo *buscarSimbolo(TablaScopes *tabla, char *key)
 {
-    node *actual = tabla->ambitos->top;
+    node *actual = tabla->ambitos->top;     // Empezar desde el scope actual
     while (actual != NULL)
     {
         Scope *scope = (Scope *)actual->value;
@@ -132,17 +146,32 @@ Simbolo *buscarSimbolo(TablaScopes *tabla, char *key)
             Simbolo *s = (Simbolo *)findElemArray(scope->simbolos, i);
             if (strcmp(s->key, key) == 0)
             {
-                return s;
+                return s;       // Encontrado
             }
         }
-        actual = actual->next;
+        actual = actual->next;      // Ir al scope exterior (más viejo)
     }
-    return NULL;
+    return NULL;        // No encontrado en ningún scope
 }
+// Busco de adentro hacia afuera (scopes más recientes primero) porque en C, las variables locales tienen prioridad sobre las 
+// globales (shadowing). Si no la encuentro en ningún scope, es un error semántico.
 
+
+// OBTENER SCOPE DE TOPE 
 Scope *scopeActual(TablaScopes *tabla)
 {
     if (isEmpty(tabla->ambitos))
         return NULL;
     return (Scope *)tabla->ambitos->top->value;
 }
+// El scope actual siempre está en el tope de la pila. Esta función es un helper para evitar acceder directamente a la estructura interna.
+
+
+// RESUMEN
+
+// initTS()         -> Crear tabla      -> "Inicializo con scope global porque todo programa C tiene ámbito global"
+// destroyTS()      -> Liberar todo     -> "Libero en orden inverso para evitar memory leaks"
+// abrirScope()     -> Nuevo bloque     -> "Pusheo un scope para cada {, modelando anidamiento"
+// cerrarScope()    -> Salir de bloque  -> "Popeo y libero símbolos que salen del ámbito"
+// agregarSimbolo() -> Declarar         -> "Solo verifico duplicados en scope actual (C permite shadowing)"
+// buscarSimbolo()  -> Usar variable    -> "Busco de adentro hacia afuera (prioridad a locales)"
